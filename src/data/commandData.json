@@ -1,0 +1,49 @@
+[
+  {
+    "name": "wanttoplay",
+    "description": "Add a game to your list",
+    "options": [
+      {
+        "name": "name",
+        "description": "Name of the game",
+        "type": 3,
+        "required": true
+      },
+      {
+        "name": "link",
+        "description": "BGG link of the game",
+        "type": 3,
+        "required": false
+      }
+    ]
+  },
+  {
+    "name": "listgames",
+    "description": "List your games or another user's games",
+    "options": [
+      {
+        "name": "user",
+        "description": "User whose games to list",
+        "type": 6,
+        "required": false
+      }
+    ]
+  },
+  {
+    "name": "listallgames",
+    "description": "List your games or another user's games",
+    "options": []
+  },
+  {
+    "name": "removegame",
+    "description": "Remove a game from your list",
+    "options": [
+      {
+        "name": "name",
+        "description": "Name of the game",
+        "type": 3,
+        "required": true
+      }
+    ]
+  }
+]
