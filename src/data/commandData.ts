@@ -1,14 +1,9 @@
 import { SlashCommandBuilder } from "discord.js";
 
 
-export const wanttoplay = "wanttoplay";
-export const listallgames = "listallgames";
-export const listgames = "listgames";
-export const removegame = "removegame";
-
 export const commands = [
   new SlashCommandBuilder()
-    .setName(wanttoplay)
+    .setName("wanttoplay")
     .setDescription("Add a game to your list")
     .addStringOption(option =>
       option
@@ -19,8 +14,8 @@ export const commands = [
     .addStringOption(option =>
       option
         .setName("minimumPlayerCount")
-        .setDescription("The minimum player count before a thread is created")
-        .setRequired(true)
+        .setDescription("The minimum player count before starting a thread")
+        .setRequired(false)
     )
     .addStringOption(option =>
       option
@@ -30,7 +25,7 @@ export const commands = [
     ),
 
   new SlashCommandBuilder()
-    .setName(listgames)
+    .setName("listgames")
     .setDescription("List your games or another user's games")
     .addUserOption(option =>
       option
@@ -40,11 +35,11 @@ export const commands = [
     ),
 
   new SlashCommandBuilder()
-    .setName(listallgames)
+    .setName("listallgames")
     .setDescription("List all users' games"),
 
   new SlashCommandBuilder()
-    .setName(removegame)
+    .setName("removegame")
     .setDescription("Remove a game from your list")
     .addStringOption(option =>
       option
