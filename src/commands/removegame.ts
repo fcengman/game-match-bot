@@ -1,5 +1,5 @@
-import { ChatInputCommandInteraction, Client } from "discord.js";
-import { loadData, saveData, updateGamesListMessage } from "../utils/helpers.js";
+import { ChatInputCommandInteraction, Client, TextChannel } from "discord.js";
+import { loadData, saveData, updateBanner, generateGamesList } from "../utils/helpers.js";
 
 export const removeGameCommand = async (interaction : ChatInputCommandInteraction, client: Client) => {
     var gamesByUser = loadData();
@@ -19,5 +19,9 @@ export const removeGameCommand = async (interaction : ChatInputCommandInteractio
 
     await interaction.reply({ content: `Removed **${name}** from your want to play list.`, ephemeral: true });
 
-     await updateGamesListMessage(client);
+     // Update banner
+    const channel = interaction.channel;
+    if (channel?.isTextBased()) {
+        await updateBanner(channel as TextChannel, client);
+    }
 }

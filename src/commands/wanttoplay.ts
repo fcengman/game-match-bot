@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction, Client } from "discord.js";
+import { ChatInputCommandInteraction, Client, TextChannel } from "discord.js";
 import type { Game } from "../types/game.js";
-import { loadData, saveData, updateGamesListMessage } from "../utils/helpers.js";
+import { loadData, saveData, updateBanner, generateGamesList } from "../utils/helpers.js";
 import { getBGGLink } from "../utils/bgg.js";
 
 export const wantToPlayCommand = async (interaction : ChatInputCommandInteraction, client: Client) => {
@@ -9,6 +9,7 @@ export const wantToPlayCommand = async (interaction : ChatInputCommandInteractio
     const userId = interaction.user.id;
     const name = interaction.options.getString("name");
     const link = interaction.options.getString("link"); // optional
+    const playercount = interaction.options.getNumber("minimumplayercount"); // optional
     
     if (!name) return;
 
@@ -24,15 +25,19 @@ export const wantToPlayCommand = async (interaction : ChatInputCommandInteractio
         await interaction.reply({ content: `You already added **${name}**!`, ephemeral: true });
         return;
     }
-    const gameToAdd: Game = finalLink ? { name, link: finalLink } : { name };
+    const gameToAdd: Game = finalLink ? { name, link: finalLink, minimumPlayerCount: playercount ?? 2 } : { name,  minimumPlayerCount: playercount ?? 2 };
 
     gamesByUser[userId].push(gameToAdd);
     saveData(gamesByUser);
 
     await interaction.reply({
-        content: `Added **${name}** to your list!${finalLink ? ` Link: <${finalLink}>` : ""}`,
+        content: `Added **${name}** to your list!`,
         ephemeral: true
     });
 
-    await updateGamesListMessage(client);
+     // Update banner
+    const channel = interaction.channel;
+    if (channel?.isTextBased()) {
+        await updateBanner(channel as TextChannel, client);
+    }
 }

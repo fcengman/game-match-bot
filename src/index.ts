@@ -2,9 +2,8 @@ import { Client, GatewayIntentBits, REST, Routes, TextChannel } from "discord.js
 import { config } from "./config/config.js";
 import {interactionCreate } from "./events/iinteractionCreate.js"
 import { commands } from "./data/commandData.js" ;
-import { getOrCreatePinnedMessage } from "./utils/helpers.js";
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 
 const rest = new REST({ version: "10" }).setToken(config.token);
 

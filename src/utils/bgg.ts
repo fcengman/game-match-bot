@@ -2,16 +2,16 @@
 
 export async function getBGGLink(gameName: string): Promise<string | undefined> {
   try {
-    const url = `https://boardgamegeek.com/geeksearch.php?action=search&q=${encodeURIComponent(gameName)}&objecttype=boardgame`;
+    const url = `https://boardgamegeek.com/xmlapi2/search?type=boardgame&query=${encodeURIComponent(gameName)}`;
     const res = await fetch(url);
-    const text = await res.text();
+    const xml = await res.text();
 
-    // parse XML to find first item id
-    const match = text.match(/<item[^>]+id="(\d+)"/);
+    // Extract first game id
+    const match = xml.match(/<item[^>]+id="(\d+)"/);
     if (match) {
       const id = match[1];
-      var result = `https://boardgamegeek.com/boardgame/${id}`;
-      console.log(result);
+      const result = `https://boardgamegeek.com/boardgame/${id}`;
+      console.log("BGG Link:", result);
       return result;
     }
   } catch (err) {

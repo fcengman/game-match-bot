@@ -1,8 +1,18 @@
-import { ChannelType, Client, Message } from "discord.js";
+import {
+  Client,
+  TextChannel,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  Message,
+  ButtonInteraction,
+  ThreadChannel,
+} from "discord.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import type { GamesData } from "../types/game.js";
+import type { GamesData, Game } from "../types/game.js";
 import { config } from "../config/config.js";
 
 // Path to your JSON file
@@ -34,64 +44,151 @@ export function loadData(): GamesData {
     }
 }
 
-export async function getOrCreatePinnedMessage(client: Client): Promise<Message | null> {
-  const channel = await client.channels.fetch(config.channel_id);
-  if (!channel || channel.type !== ChannelType.GuildText) return null;
-
-  let pinnedMessageId = null;
-
-  // Try to load from file (so we remember it between restarts)
-  if (fs.existsSync(config.pinnedMessageFile)) {
-    const data = JSON.parse(fs.readFileSync(config.pinnedMessageFile, "utf8"));
-    pinnedMessageId = data.messageId;
+export function generateGamesList(): string {
+  const data = loadData();
+  let result = "";
+  for (const [userId, games] of Object.entries(data)) {
+    const names = games.map(g => g.name).join(", ");
+    result += `<@${userId}>: ${names || "No games"}\n`;
   }
+  return result || "No games added yet!";
+}
 
-  let pinnedMessage = null;
+interface WantToPlay {
+  userId: string;
+  username: string;
+  gameName: string;
+  gameLink?: string;
+  minimumPlayers: number;
+}
 
-  if (pinnedMessageId) {
-    try {
-      pinnedMessage = await channel.messages.fetch(pinnedMessageId);
-    } catch {
-      pinnedMessage = null; // message might have been deleted
+let pinnedBannerMessage: Message | null = null;
+
+// Track interested users
+const gameInterests: Record<string, string[]> = {}; // key = gameName, value = array of userIds
+
+export async function updateBanner(channel: TextChannel, client: Client) {
+  const gamesData = loadData(); // { userId: [{ name, link, minimumPlayers }] }
+  const usersWantToPlay: {
+    userId: string;
+    username: string;
+    gameName: string;
+    gameLink?: string;
+    minimumPlayers: number;
+  }[] = [];
+
+  // Build list of users who want to play
+  for (const [userId, games] of Object.entries(gamesData)) {
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (!user) continue;
+
+    for (const game of games) {
+      usersWantToPlay.push({
+        userId,
+        username: user.username,
+        gameName: game.name,
+        gameLink: game.link as string,
+        minimumPlayers: game.minimumPlayerCount ?? 2,
+      });
     }
   }
 
-  if (!pinnedMessage) {
-    pinnedMessage = await channel.send("📋 **Want to Play Games**\nNo games yet!");
-    await pinnedMessage.pin();
-    fs.writeFileSync(config.pinnedMessageFile, JSON.stringify({ messageId: pinnedMessage.id }, null, 2));
+  if (!usersWantToPlay.length) return;
+
+  // Generate message content: one line per game
+  const contentLines = usersWantToPlay.map(u =>
+    u.gameLink
+      ? `${u.username} wants to play [${u.gameName}](${u.gameLink})`
+      : `${u.username} wants to play ${u.gameName}`
+  );
+  const content = contentLines.join("\n");
+
+  // Generate buttons: one per game
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  for (const u of usersWantToPlay) {
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`interested_${u.gameName}`)
+        .setLabel(`I'm Interested in ${u.gameName}`)
+        .setStyle(ButtonStyle.Primary)
+    );
+    rows.push(row);
   }
 
-  return pinnedMessage;
+  // Edit existing pinned message if exists
+  if (pinnedBannerMessage) {
+    try {
+      await pinnedBannerMessage.edit({ content, components: rows });
+      return pinnedBannerMessage;
+    } catch {
+      pinnedBannerMessage = null;
+    }
+  }
+
+  // Otherwise, send new pinned banner message
+  const message = await channel.send({ content, components: rows });
+  pinnedBannerMessage = message;
+  await message.pin();
+  return message;
 }
 
-export async function updateGamesListMessage(client: Client): Promise<void> {
-  const pinnedMessage = await getOrCreatePinnedMessage(client);
-  if (!pinnedMessage) return;
+// Handle button clicks
+export async function handleButton(interaction: ButtonInteraction, client: Client, channel: TextChannel) {
+  const [prefix, name] = interaction.customId.split("_");
+  if (prefix !== "interested") return;
+  const gameName = name!;
+  
+  const gamesData = loadData();
 
-  const gamesFilePath = path.resolve(__dirname, config.gamesFile);
+   // Find original poster and game info
+  let gameInfo: { userId: string; name: string; link?: string; minimumPlayers?: number } | undefined;
 
-  if (!fs.existsSync(gamesFilePath)) {
-    await pinnedMessage.edit("📋 **Want to Play Games**\n_No games yet!_");
+  for (const [userId, games] of Object.entries(gamesData)) {
+    const match = games.find(g => g.name === gameName);
+    if (match) {
+      gameInfo = { userId, ...match };
+      break;
+    }
+  }
+
+  if (!gameInfo) return;
+
+  if (interaction.user.id === gameInfo.userId) {
+    await interaction.reply({
+      content: "You can't mark yourself as interested in your own game.",
+      ephemeral: true
+    });
     return;
   }
 
-  const gamesData = JSON.parse(fs.readFileSync(gamesFilePath, "utf8"));
-  let text = "📋 **Want to Play Games**\n\n";
+  // Initialize list
+  if (!gameInterests[gameName]) gameInterests[gameName] = [];
 
-  if (Object.keys(gamesData).length === 0) {
-    text += "_No games yet!_";
-  } else {
-    for (const [userId, games] of Object.entries(gamesData as Record<string, any>)) {
-      const mention = `<@${userId}>`;
-      const gameList = (games as any[])
-        .map((g: any) => `• [${g.name}](${g.link ?? "#"})`)
-        .join("\n");
-      text += `**${mention}**\n${gameList}\n\n`;
-    }
+  if (!gameInterests[gameName].includes(interaction.user.id)) {
+    gameInterests[gameName].push(interaction.user.id);
   }
 
-  await pinnedMessage.edit(text);
+  await interaction.reply({ content: `You are now interested in ${gameName}`, ephemeral: true }); 
+
+  const totalPlayers = (gameInterests[gameName].length || 0) + 1; // +1 for poster
+  if (totalPlayers >= (gameInfo.minimumPlayers || 2)) {
+    const thread: ThreadChannel = await channel.threads.create({
+      name: `${gameName} game session`,
+      autoArchiveDuration: 60,
+      reason: "Enough players interested"
+    });
+
+    // Add original poster
+    const poster = await client.users.fetch(gameInfo.userId);
+    await thread.members.add(poster.id);
+
+    // Add interested users
+    for (const userId of gameInterests[gameName]) {
+      const user = await client.users.fetch(userId);
+      await thread.members.add(user.id);
+    }
+
+    await thread.send(`Thread created for **${gameName}** with all interested players!`);
+    delete gameInterests[gameName];
+  }
 }
-
-

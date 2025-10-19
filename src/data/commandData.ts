@@ -11,9 +11,9 @@ export const commands = [
         .setDescription("Name of the game")
         .setRequired(true)
     )
-    .addStringOption(option =>
+    .addNumberOption(option =>
       option
-        .setName("minimumPlayerCount")
+        .setName("minimumplayercount")
         .setDescription("The minimum player count before starting a thread")
         .setRequired(false)
     )
@@ -39,8 +39,22 @@ export const commands = [
     .setDescription("List all users' games"),
 
   new SlashCommandBuilder()
+    .setName("updatebanner")
+    .setDescription("refresh banner"),
+
+  new SlashCommandBuilder()
     .setName("removegame")
     .setDescription("Remove a game from your list")
+    .addStringOption(option =>
+      option
+        .setName("name")
+        .setDescription("Name of the game")
+        .setRequired(true)
+    ),
+
+    new SlashCommandBuilder()
+    .setName("findlink")
+    .setDescription("get BGG link for this game")
     .addStringOption(option =>
       option
         .setName("name")

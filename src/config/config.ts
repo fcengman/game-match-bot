@@ -6,6 +6,6 @@ export const config = {
     client_id: process.env.CLIENT_ID! || "",    
     guild_id: process.env.GUILD_ID! || "",    
     channel_id: process.env.ALLOWED_CHANNEL_ID! || "",    
-    gamesFile: "../games.json",               // Path to your games JSON
+    gamesFile: "../games.json",
     pinnedMessageFile: "../pinnedMessage.json"
 };
