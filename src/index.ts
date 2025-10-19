@@ -30,9 +30,9 @@ client.on("interactionCreate", async (interaction) => {
 client.once("ready", async () => {
   console.log(`🤖 Logged in as ${client.user?.tag}`);
 
-  const channel = await client.channels.fetch(process.env.ALLOWED_CHANNEL_ID!) as TextChannel;
-  if (channel?.isTextBased()) {
-    await getOrCreatePinnedMessage(client, channel);
-  }
+//   const channel = await client.channels.fetch(process.env.ALLOWED_CHANNEL_ID!) as TextChannel;
+//   if (channel?.isTextBased()) {
+//     await getOrCreatePinnedMessage(client, channel);
+//   }
 });
 client.login(config.token);

@@ -1,4 +1,4 @@
-import { ChannelType, Client, TextChannel, Message } from "discord.js";
+import { ChannelType, Client, Message } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -34,7 +34,8 @@ export function loadData(): GamesData {
     }
 }
 
-export async function getOrCreatePinnedMessage(client: Client, channel: TextChannel): Promise<Message | null> {
+export async function getOrCreatePinnedMessage(client: Client): Promise<Message | null> {
+  const channel = await client.channels.fetch(config.channel_id);
   if (!channel || channel.type !== ChannelType.GuildText) return null;
 
   let pinnedMessageId = null;
