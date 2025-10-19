@@ -1,9 +1,9 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction, Client } from "discord.js";
 import type { Game } from "../types/game.js";
-import { loadData, saveData } from "../utils/helpers.js";
+import { loadData, saveData, updateGamesListMessage } from "../utils/helpers.js";
 import { getBGGLink } from "../utils/bgg.js";
 
-export const wantToPlayCommand = async (interaction : ChatInputCommandInteraction) => {
+export const wantToPlayCommand = async (interaction : ChatInputCommandInteraction, client: Client) => {
 
     const gamesByUser = loadData()
     const userId = interaction.user.id;
@@ -33,4 +33,6 @@ export const wantToPlayCommand = async (interaction : ChatInputCommandInteractio
         content: `Added **${name}** to your list!${finalLink ? ` Link: <${finalLink}>` : ""}`,
         ephemeral: true
     });
+
+    await updateGamesListMessage(client);
 }

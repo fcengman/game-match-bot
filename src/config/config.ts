@@ -7,4 +7,5 @@ export const config = {
     guild_id: process.env.GUILD_ID! || "",    
     channel_id: process.env.ALLOWED_CHANNEL_ID! || "",    
     gamesFile: "../games.json",               // Path to your games JSON
+    pinnedMessageFile: "../pinnedMessage.json"
 };

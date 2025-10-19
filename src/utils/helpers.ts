@@ -1,3 +1,4 @@
+import { ChannelType, Client, TextChannel, Message } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -31,6 +32,65 @@ export function loadData(): GamesData {
         console.error("Failed to read games.json:", err);
         return {};
     }
+}
+
+export async function getOrCreatePinnedMessage(client: Client, channel: TextChannel): Promise<Message | null> {
+  if (!channel || channel.type !== ChannelType.GuildText) return null;
+
+  let pinnedMessageId = null;
+
+  // Try to load from file (so we remember it between restarts)
+  if (fs.existsSync(config.pinnedMessageFile)) {
+    const data = JSON.parse(fs.readFileSync(config.pinnedMessageFile, "utf8"));
+    pinnedMessageId = data.messageId;
+  }
+
+  let pinnedMessage = null;
+
+  if (pinnedMessageId) {
+    try {
+      pinnedMessage = await channel.messages.fetch(pinnedMessageId);
+    } catch {
+      pinnedMessage = null; // message might have been deleted
+    }
+  }
+
+  if (!pinnedMessage) {
+    pinnedMessage = await channel.send("📋 **Want to Play Games**\nNo games yet!");
+    await pinnedMessage.pin();
+    fs.writeFileSync(config.pinnedMessageFile, JSON.stringify({ messageId: pinnedMessage.id }, null, 2));
+  }
+
+  return pinnedMessage;
+}
+
+export async function updateGamesListMessage(client: Client): Promise<void> {
+  const pinnedMessage = await getOrCreatePinnedMessage(client);
+  if (!pinnedMessage) return;
+
+  const gamesFilePath = path.resolve(__dirname, config.gamesFile);
+
+  if (!fs.existsSync(gamesFilePath)) {
+    await pinnedMessage.edit("📋 **Want to Play Games**\n_No games yet!_");
+    return;
+  }
+
+  const gamesData = JSON.parse(fs.readFileSync(gamesFilePath, "utf8"));
+  let text = "📋 **Want to Play Games**\n\n";
+
+  if (Object.keys(gamesData).length === 0) {
+    text += "_No games yet!_";
+  } else {
+    for (const [userId, games] of Object.entries(gamesData as Record<string, any>)) {
+      const mention = `<@${userId}>`;
+      const gameList = (games as any[])
+        .map((g: any) => `• [${g.name}](${g.link ?? "#"})`)
+        .join("\n");
+      text += `**${mention}**\n${gameList}\n\n`;
+    }
+  }
+
+  await pinnedMessage.edit(text);
 }
 
 

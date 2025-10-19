@@ -1,7 +1,7 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction, Client } from "discord.js";
 import { loadData } from "../utils/helpers.js";
 
-export const listAllGamesCommand = async (interaction : ChatInputCommandInteraction) => {
+export const listAllGamesCommand = async (interaction : ChatInputCommandInteraction, client: Client) => {
     // Get all users who have games
     const gamesByUser = loadData()
     const usersWithGames = Object.entries(gamesByUser).filter(([_, games]) => games.length > 0);

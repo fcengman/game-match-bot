@@ -1,7 +1,7 @@
-import { ChatInputCommandInteraction } from "discord.js";
-import { loadData, saveData } from "../utils/helpers.js";
+import { ChatInputCommandInteraction, Client } from "discord.js";
+import { loadData, saveData, updateGamesListMessage } from "../utils/helpers.js";
 
-export const removeGameCommand = async (interaction : ChatInputCommandInteraction) => {
+export const removeGameCommand = async (interaction : ChatInputCommandInteraction, client: Client) => {
     var gamesByUser = loadData();
     const name = interaction.options.getString("name");
     const userId = interaction.user.id;
@@ -18,4 +18,6 @@ export const removeGameCommand = async (interaction : ChatInputCommandInteractio
     saveData(gamesByUser);
 
     await interaction.reply({ content: `Removed **${name}** from your want to play list.`, ephemeral: true });
+
+     await updateGamesListMessage(client);
 }

@@ -1,7 +1,7 @@
-import { ChatInputCommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction, Client } from "discord.js";
 import { loadData } from "../utils/helpers.js";
 
-export const listGamesByUserCommand = async (interaction : ChatInputCommandInteraction) => {
+export const listGamesByUserCommand = async (interaction : ChatInputCommandInteraction, client: Client) => {
     const gamesByUser = loadData();
     
     const targetUser = interaction.options.getUser("user") || interaction.user;

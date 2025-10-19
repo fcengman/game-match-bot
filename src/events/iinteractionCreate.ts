@@ -1,8 +1,8 @@
-import type { Interaction } from "discord.js";
+import type { Interaction, Client } from "discord.js";
 import { handleCommand } from "../router.js";
 import { config } from "../config/config.js";
 
-export const interactionCreate = async (interaction: Interaction) => {
+export const interactionCreate = async (interaction: Interaction, client: Client) => {
     // Interaction handling
     if (!interaction.isChatInputCommand()) return;
     if (interaction.channelId !== config.channel_id) {
@@ -12,5 +12,5 @@ export const interactionCreate = async (interaction: Interaction) => {
         });
         return;
     }
-    await handleCommand(interaction);
+    await handleCommand(interaction, client);
 };
