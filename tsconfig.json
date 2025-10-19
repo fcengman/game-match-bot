@@ -45,5 +45,6 @@
     // Add these two:
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "include": ["src"]
 }
